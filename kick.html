@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Kick Yayın Merkezi</title>
+    <style>
+        :root {
+            --bg-dark: #0b0e0f;
+            --sidebar-bg: #181a1b;
+            --kick-green: #53fc18;
+            --text-main: #f1f2f6;
+            --text-muted: #a4b0be;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            display: flex; height: 100vh; overflow: hidden;
+        }
+
+        /* --- SOL PANEL --- */
+        .sidebar {
+            width: 320px; background-color: var(--sidebar-bg);
+            border-right: 1px solid #2d2d2d;
+            display: flex; flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        .header {
+            padding: 20px; font-size: 1.2rem; font-weight: bold;
+            border-bottom: 2px solid var(--kick-green);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .refresh-btn {
+            background: none; border: none; color: var(--kick-green);
+            cursor: pointer; font-size: 1.2rem; transition: 0.2s;
+        }
+        .refresh-btn:hover { transform: rotate(90deg); }
+
+        .list-container { flex: 1; overflow-y: auto; padding: 10px; }
+
+        /* --- ALT KISIM (EKLEME BUTONU) --- */
+        .sidebar-footer {
+            padding: 15px; border-top: 1px solid #2d2d2d;
+            background: #131415;
+        }
+        .add-btn {
+            width: 100%; background: #2d2d2d; color: white;
+            border: 1px dashed var(--kick-green); padding: 10px; border-radius: 8px;
+            font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
+        .add-btn:hover { background: #3d3d3d; color: var(--kick-green); }
+
+        /* --- KART TASARIMLARI --- */
+        .card {
+            display: flex; align-items: center; padding: 12px; margin-bottom: 8px;
+            background: rgba(255,255,255,0.03); border-radius: 8px;
+            cursor: pointer; transition: 0.2s; border-left: 4px solid transparent;
+            position: relative;
+        }
+        .card:hover { background: rgba(83, 252, 24, 0.05); }
+        .card .name { font-weight: bold; font-size: 0.95rem; text-transform: capitalize; }
+        .card .status { font-size: 0.75rem; color: var(--text-muted); margin-top: 3px;}
+
+        /* Silme Butonu */
+        .delete-btn {
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; color: #ff4757; font-size: 1.2rem;
+            cursor: pointer; opacity: 0; transition: 0.2s;
+        }
+        .card:hover .delete-btn { opacity: 1; }
+        .delete-btn:hover { transform: translateY(-50%) scale(1.2); }
+
+        /* Kick Canlı/Çevrimdışı Durumları */
+        .card.kick-live { border-left-color: var(--kick-green); background: rgba(83,252,24,0.05); }
+        .card.kick-live .status { color: var(--kick-green); font-weight: bold; }
+        .card.kick-offline { border-left-color: #444; opacity: 0.7; }
+        .card.kick-active { background: rgba(83,252,24,0.15); border: 1px solid var(--kick-green); border-left-color: var(--kick-green); opacity: 1; }
+
+        /* --- SAĞ PANEL (PLAYER) --- */
+        .main-content {
+            flex: 1; background: #000; display: flex;
+            flex-direction: column; position: relative;
+        }
+
+        .welcome-msg {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            text-align: center; color: var(--text-muted);
+        }
+
+        /* Kick İframe Taşıyıcısı */
+        #kick-container { width: 100%; height: 100%; display: none; }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--kick-green); }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="header">
+            KICK RADARI 
+            <button class="refresh-btn" onclick="fetchKick()" title="Listeyi Yenile">🔄</button>
+        </div>
+        <div class="list-container" id="kick-list">
+            </div>
+
+        <div class="sidebar-footer">
+            <button class="add-btn" onclick="askForChannel()">➕ Yayıncı Ekle</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div id="welcome-msg" class="welcome-msg">
+            <h1 style="color: var(--kick-green); font-size: 3rem; margin-bottom: 10px;">KICK</h1>
+            <h2>İzlemek için soldan bir yayıncı seçin</h2>
+            <p style="font-size: 0.9rem; margin-top: 10px;">(CORS eklentisinin açık olduğundan emin olun)</p>
+        </div>
+
+        <div id="kick-container">
+            <iframe id="kick-iframe" width="100%" height="100%" src="" frameborder="0" allowfullscreen></iframe>
+        </div>
+    </div>
+
+    <script>
+        // ================= VERİ TABANI (LOCAL STORAGE) =================
+        let savedChannels = JSON.parse(localStorage.getItem('myKickOnlyChannels'));
+        
+        if (!savedChannels) {
+            // İlk kez girenler için varsayılan liste
+            savedChannels = ["purplebixi", "elraenn", "wtcn", "haskologlu"];
+            saveToStorage();
+        }
+
+        function saveToStorage() {
+            localStorage.setItem('myKickOnlyChannels', JSON.stringify(savedChannels));
+        }
+
+        // ================= YAYINCI EKLEME VE SİLME =================
+        function askForChannel() { 
+            const input = prompt("Lütfen Kick Kanal Linkini veya Yayıncı Adını girin:\n\nÖrnek: https://kick.com/elraenn\nÖrnek: elraenn");
+            
+            if (!input || input.trim() === "") return;
+            const link = input.trim().toLowerCase();
+            let username = "";
+
+            // Link mi yoksa sadece isim mi kontrol et
+            if (link.includes("kick.com/")) {
+                username = link.split("kick.com/")[1].split("?")[0].split("/")[0];
+            } else {
+                // İçinde boşluk ve özel karakter olmayan bir kelimeyse direkt isimdir
+                username = link.replace(/[^a-z0-9_]/g, ''); 
+            }
+
+            if(username) {
+                if (!savedChannels.includes(username)) {
+                    savedChannels.push(username);
+                    saveToStorage();
+                    fetchKick();
+                } else {
+                    alert("Bu yayıncı zaten listende var!");
+                }
+            } else {
+                alert("Geçerli bir kullanıcı adı bulunamadı.");
+            }
+        }
+
+        function removeChannel(username) {
+            if(confirm(`'${username}' kanalını silmek istediğine emin misin?`)) {
+                savedChannels = savedChannels.filter(name => name !== username);
+                saveToStorage();
+                
+                // Eğer silinen kanal şu an açıksa, ekranı kapat
+                const activeIframe = document.getElementById('kick-iframe').src;
+                if(activeIframe.includes(username)) {
+                    document.getElementById('kick-container').style.display = 'none';
+                    document.getElementById('welcome-msg').style.display = 'block';
+                    document.getElementById('kick-iframe').src = '';
+                }
+
+                fetchKick(); 
+            }
+        }
+
+        // ================= VERİ ÇEKME İŞLEMLERİ =================
+        async function fetchKick() {
+            const listDiv = document.getElementById('kick-list');
+            
+            if(savedChannels.length === 0) {
+                listDiv.innerHTML = '<div style="padding:10px; color:#666; text-align:center;">Liste boş. Alttan yayıncı ekle.</div>';
+                return;
+            }
+
+            listDiv.innerHTML = '<div style="padding:10px; color:#666; text-align:center;">Yayıncılar Aranıyor...</div>';
+            let kickResults = [];
+
+            for (const user of savedChannels) {
+                try {
+                    // API v1 üzerinden direkt istek
+                    const res = await fetch(`https://kick.com/api/v1/channels/${user}`);
+                    if (!res.ok) throw new Error("Engellendi");
+                    
+                    const data = await res.json();
+                    const isLive = data.livestream !== null;
+
+                    kickResults.push({
+                        username: user,
+                        isLive: isLive,
+                        viewerCount: isLive ? data.livestream.viewer_count : 0,
+                        statusText: isLive ? `🟢 CANLI (${data.livestream.viewer_count} İzleyici)` : '⚫ Çevrimdışı'
+                    });
+                } catch (e) { 
+                    kickResults.push({
+                        username: user,
+                        isLive: false,
+                        viewerCount: -1,
+                        statusText: '<span style="color:orange;">Durum Bilinmiyor (Yine de İzle)</span>'
+                    });
+                }
+            }
+
+            // Önce canlı olanlar, sonra izleyici sayısına göre sıralama
+            kickResults.sort((a, b) => {
+                if (a.isLive === b.isLive) {
+                    return b.viewerCount - a.viewerCount;
+                }
+                return (b.isLive === true) - (a.isLive === true);
+            });
+
+            let html = '';
+            kickResults.forEach(item => {
+                const cardClass = item.isLive ? 'kick-live' : 'kick-offline';
+                html += `
+                    <div class="card ${cardClass}" onclick="playKick('${item.username}', this)">
+                        <div style="flex:1">
+                            <div class="name">${item.username}</div>
+                            <div class="status">${item.statusText}</div>
+                        </div>
+                        <button class="delete-btn" title="Sil" onclick="event.stopPropagation(); removeChannel('${item.username}')">❌</button>
+                    </div>
+                `;
+            });
+            listDiv.innerHTML = html;
+        }
+
+        // ================= OYNATICI KONTROLLERİ =================
+        function playKick(username, element) {
+            // Aktif kartı belirginleştir
+            document.querySelectorAll('.card').forEach(c => c.classList.remove('kick-active'));
+            element.classList.add('kick-active');
+
+            // Ekranları ayarla
+            document.getElementById('welcome-msg').style.display = 'none';
+            const kickContainer = document.getElementById('kick-container');
+            const kickIframe = document.getElementById('kick-iframe');
+            
+            kickContainer.style.display = 'block';
+            
+            // Github Pages alan adını otomatik algıla ve Kick'e gönder (Embed Kilidini Açar)
+            const currentDomain = window.location.hostname;
+            kickIframe.src = `https://player.kick.com/${username}?autoplay=true&parent=${currentDomain}`;
+        }
+
+        // --- SAYFA YÜKLENDİĞİNDE BAŞLAT ---
+        fetchKick();
+
+    </script>
+</body>
+</html>
