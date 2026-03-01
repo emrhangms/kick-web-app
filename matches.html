@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Canlı Maç Merkezi</title>
+    <style>
+        :root {
+            --bg-dark: #13131a;
+            --card-bg: #1c1c24;
+            --accent: #ff4757;
+            --text-main: #f1f2f6;
+            --text-muted: #a4b0be;
+        }
+        body { 
+            font-family: 'Segoe UI', Tahoma, sans-serif; 
+            background: var(--bg-dark); 
+            color: var(--text-main); 
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        /* 1. Sütun: Spor Sekmeleri */
+        .sports-sidebar {
+            width: 120px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 15px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+        .sport-tab {
+            padding: 12px 10px;
+            text-align: center;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            transition: 0.2s;
+            color: var(--text-muted);
+        }
+        .sport-tab:hover { background: rgba(255,71,87,0.2); color: white; }
+        .sport-tab.active-tab {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 0 10px rgba(255,71,87,0.4);
+        }
+
+        /* 2. Sütun: Maç Listesi */
+        .match-list-container {
+            width: 380px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+        }
+        .match-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .match-list-header h2 {
+            margin: 0;
+            font-size: 1.2em;
+        }
+        
+        /* Filtre */
+        .filter-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85em;
+            color: var(--text-muted);
+            cursor: pointer;
+            background: rgba(255,255,255,0.05);
+            padding: 6px 10px;
+            border-radius: 6px;
+            transition: 0.2s;
+        }
+        .filter-toggle:hover { background: rgba(255,255,255,0.1); color: white; }
+        .filter-toggle input {
+            accent-color: var(--accent);
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .match-item {
+            background: rgba(255,255,255,0.05);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-left: 4px solid transparent;
+        }
+        .match-item:hover { background: rgba(255,255,255,0.1); }
+        .match-item.active-match {
+            background: rgba(255,71,87,0.15);
+            border-left: 4px solid var(--accent);
+            transform: translateX(4px);
+        }
+
+        .team-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 35%;
+            text-align: center;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        .team-info img {
+            width: 35px;
+            height: 35px;
+            object-fit: contain;
+            margin-bottom: 5px;
+        }
+        
+        .match-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px; /* Elemanları biraz yakınlaştırdık */
+            width: 30%;
+        }
+
+        /* YENİ: Bugün / Yarın Etiketi */
+        .day-badge {
+            font-size: 0.65em;
+            color: var(--accent);
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: -2px;
+        }
+
+        .time-badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            color: var(--text-muted);
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+        .time-badge.live {
+            background: rgba(255, 71, 87, 0.2);
+            color: var(--accent);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .vs-badge {
+            font-size: 0.65em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* 3. Sütun: Oynatıcı */
+        .player-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .video-wrapper {
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            border: none;
+        }
+        .stream-options {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .stream-btn {
+            background: #2f3542;
+            color: white;
+            border: 1px solid #57606f;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .stream-btn:hover { background: #57606f; }
+        .stream-btn.active-stream { background: var(--accent); border-color: var(--accent); }
+        .hd-badge { background: #2ed573; color: #000; font-size: 0.7em; padding: 2px 5px; border-radius: 4px; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <div class="sports-sidebar" id="sports-tabs">
+        <div style="text-align:center; color: #a4b0be; font-size: 0.8em; margin-top: 10px;">Yükleniyor...</div>
+    </div>
+
+    <div class="match-list-container">
+        <div class="match-list-header">
+            <h2>📅 Maç Programı</h2>
+        </div>
+        
+        <label class="filter-toggle" style="margin-bottom: 15px;">
+            <input type="checkbox" id="turkish-filter" onchange="renderMatches()">
+            🇹🇷 Sadece Türk Takımları
+        </label>
+
+        <div id="match-list">Veriler çekiliyor...</div>
+    </div>
+
+    <div class="player-container">
+        <div class="video-wrapper">
+            <iframe id="video-player" src="" allowfullscreen></iframe>
+        </div>
+        <div class="stream-options" id="stream-options">
+            <div style="color: var(--text-muted);">Yayın saatinde linkler buraya eklenecektir. Seçmek için listeden bir maça tıklayın.</div>
+        </div>
+    </div>
+
+    <script>
+        const baseUrl = 'https://streamed.pk/api';
+        let allMatches = [];
+        let allSports = [];
+        let currentSportFilter = 'all';
+        let currentMatchId = null; 
+
+        const turkishKeywords = [
+            "galatasaray", "fenerbah", "beşiktaş", "besiktas", "trabzon", "başakşehir", "basaksehir", 
+            "adana demir", "sivas", "konya", "antalya", "kasımpaşa", "kasimpasa", "ankaragücü", 
+            "ankaragucu", "alanya", "gaziantep", "hatay", "samsun", "rize", "pendik", "göztepe", "goztepe",
+            "efes", "telekom", "darüşşafaka", "darussafaka", "karşıyaka", "karsiyaka", "bursa", "banvit",
+            "türkiye", "turkey", "super lig", "süper lig"
+        ];
+
+        function isTurkishMatch(match) {
+            const textToSearch = (match.title + " " + (match.teams?.home?.name || "") + " " + (match.teams?.away?.name || "")).toLowerCase();
+            return turkishKeywords.some(keyword => textToSearch.includes(keyword));
+        }
+
+        async function initializeSystem() {
+            try {
+                // YENİ: Tüm yaklaşan maçları çekiyoruz ki "Yarın"ki maçlar da listeye düşsün
+                const [sportsRes, matchesRes] = await Promise.all([
+                    fetch(`${baseUrl}/sports`),
+                    fetch(`${baseUrl}/matches/all`)
+                ]);
+                
+                allSports = await sportsRes.json();
+                const rawMatches = await matchesRes.json();
+
+                const now = Date.now();
+                allMatches = rawMatches.filter(m => (m.date + 9000000) > now);
+
+                renderSportsTabs();
+                renderMatches();
+            } catch (error) {
+                document.getElementById('match-list').innerHTML = '❌ Sunucuya bağlanılamadı.';
+            }
+        }
+
+        function renderSportsTabs() {
+            const tabsDiv = document.getElementById('sports-tabs');
+            let html = `<div class="sport-tab active-tab" id="tab-all" onclick="filterSport('all')">TÜMÜ</div>`;
+            const activeSportIds = [...new Set(allMatches.map(m => m.category))];
+
+            activeSportIds.forEach(sportId => {
+                const sportObj = allSports.find(s => s.id === sportId) || { name: sportId.toUpperCase() };
+                html += `<div class="sport-tab" id="tab-${sportId}" onclick="filterSport('${sportId}')">${sportObj.name}</div>`;
+            });
+
+            tabsDiv.innerHTML = html;
+        }
+
+        function filterSport(sportId) {
+            currentSportFilter = sportId;
+            document.querySelectorAll('.sport-tab').forEach(t => t.classList.remove('active-tab'));
+            document.getElementById(`tab-${sportId}`).classList.add('active-tab');
+            renderMatches(); 
+        }
+
+        function renderMatches() {
+            const listDiv = document.getElementById('match-list');
+            listDiv.innerHTML = '';
+
+            let filteredMatches = currentSportFilter === 'all' 
+                ? [...allMatches]
+                : allMatches.filter(m => m.category === currentSportFilter);
+
+            const isTurkishFilterActive = document.getElementById('turkish-filter').checked;
+            if (isTurkishFilterActive) {
+                filteredMatches = filteredMatches.filter(match => isTurkishMatch(match));
+            }
+
+            filteredMatches.sort((a, b) => {
+                const aHasLogo = a.teams?.home?.badge || a.teams?.away?.badge ? 1 : 0;
+                const bHasLogo = b.teams?.home?.badge || b.teams?.away?.badge ? 1 : 0;
+                
+                if (bHasLogo !== aHasLogo) return bHasLogo - aHasLogo;
+                return a.date - b.date;
+            });
+
+            if (filteredMatches.length === 0) {
+                listDiv.innerHTML = `<p style="color:#a4b0be; text-align:center;">
+                    ${isTurkishFilterActive ? "Yaklaşan bir Türk maçı bulunamadı." : "Bu kategoride yaklaşan maç yok."}
+                </p>`;
+                return;
+            }
+
+            // Bugün ve Yarın tarihlerini hesaplamak için anlık tarihi alıyoruz
+            const today = new Date();
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            filteredMatches.forEach(match => {
+                let homeName = 'Ev Sahibi', homeBadge = '', awayName = 'Dep.', awayBadge = '';
+                if (match.teams) {
+                    if (match.teams.home) {
+                        homeName = match.teams.home.name;
+                        homeBadge = match.teams.home.badge ? `${baseUrl}/images/badge/${match.teams.home.badge}.webp` : '';
+                    }
+                    if (match.teams.away) {
+                        awayName = match.teams.away.name;
+                        awayBadge = match.teams.away.badge ? `${baseUrl}/images/badge/${match.teams.away.badge}.webp` : '';
+                    }
+                }
+
+                // GÜN VE SAAT HESAPLAMALARI
+                const matchTime = new Date(match.date);
+                const timeStr = matchTime.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                const isLive = Date.now() >= match.date; 
+
+                // YENİ: "Bugün" ve "Yarın" Mantığı
+                let dayLabel = '';
+                if (matchTime.getDate() === today.getDate() && matchTime.getMonth() === today.getMonth()) {
+                    dayLabel = 'BUGÜN';
+                } else if (matchTime.getDate() === tomorrow.getDate() && matchTime.getMonth() === tomorrow.getMonth()) {
+                    dayLabel = 'YARIN';
+                } else {
+                    // Eğer maç 2 günden daha sonraysa direkt tarihi yazdır (Örn: 14 Eki)
+                    dayLabel = matchTime.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }).toUpperCase();
+                }
+
+                const div = document.createElement('div');
+                div.className = `match-item ${match.id === currentMatchId ? 'active-match' : ''}`;
+                
+                div.innerHTML = `
+                    <div class="team-info">
+                        ${homeBadge ? `<img src="${homeBadge}" onerror="this.style.display='none'">` : ''}
+                        <span>${homeName}</span>
+                    </div>
+                    
+                    <div class="match-center">
+                        <div class="day-badge">${dayLabel}</div>
+                        <div class="time-badge ${isLive ? 'live' : ''}">${isLive ? '🔴 CANLI' : `🕒 ${timeStr}`}</div>
+                        <div class="vs-badge">${match.category}</div>
+                    </div>
+
+                    <div class="team-info">
+                        ${awayBadge ? `<img src="${awayBadge}" onerror="this.style.display='none'">` : ''}
+                        <span>${awayName}</span>
+                    </div>
+                `;
+                
+                div.onclick = () => {
+                    currentMatchId = match.id;
+                    renderMatches(); 
+                    
+                    if (isLive) {
+                        loadStreams(match); 
+                    } else {
+                        // Seçilen maçın "Bugün" mü "Yarın" mı olduğunu alttaki mesaja da ekledik
+                        const displayDay = dayLabel === 'BUGÜN' || dayLabel === 'YARIN' ? dayLabel.toLowerCase() : dayLabel;
+                        document.getElementById('stream-options').innerHTML = `<div style="color: var(--text-muted);">🕒 Bu maç <b>${displayDay} saat ${timeStr}</b>'da başlayacak. Yayın linkleri maç saatinde eklenecektir.</div>`;
+                        document.getElementById('video-player').src = ""; 
+                    }
+                };
+                
+                listDiv.appendChild(div);
+            });
+        }
+
+        async function loadStreams(match) {
+            const optionsDiv = document.getElementById('stream-options');
+            optionsDiv.innerHTML = '🔄 Yayınlar aranıyor...';
+
+            if (!match.sources || match.sources.length === 0) {
+                optionsDiv.innerHTML = '❌ Maç saati geldi ancak henüz yayın kaynağı eklenmedi. Lütfen sayfayı yenileyip tekrar deneyin.';
+                return;
+            }
+
+            try {
+                let allStreams = [];
+                for (const source of match.sources) {
+                    const res = await fetch(`${baseUrl}/stream/${source.source}/${source.id}`);
+                    if (res.ok) {
+                        const streams = await res.json();
+                        allStreams = allStreams.concat(streams);
+                    }
+                }
+
+                if (allStreams.length === 0) {
+                    optionsDiv.innerHTML = '❌ Aktif yayın sunucusu bulunamadı.';
+                    return;
+                }
+
+                optionsDiv.innerHTML = '';
+                allStreams.forEach((stream, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = `stream-btn ${index === 0 ? 'active-stream' : ''}`;
+                    btn.innerHTML = `📺 Yayın ${index + 1} (${stream.language}) ${stream.hd ? '<span class="hd-badge">HD</span>' : ''}`;
+                    btn.onclick = () => {
+                        document.getElementById('video-player').src = stream.embedUrl;
+                        document.querySelectorAll('.stream-btn').forEach(b => b.classList.remove('active-stream'));
+                        btn.classList.add('active-stream');
+                    };
+                    optionsDiv.appendChild(btn);
+                });
+                
+                document.getElementById('video-player').src = allStreams[0].embedUrl;
+
+            } catch (error) {
+                optionsDiv.innerHTML = '❌ Yayınlar yüklenirken hata oluştu.';
+            }
+        }
+
+        initializeSystem();
+    </script>
+</body>
+</html>
