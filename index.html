@@ -2,7 +2,12 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Canlı Maç Merkezi</title>
+    
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#ff4757">
+    <link rel="apple-touch-icon" href="./icon-192.png">
     <style>
         :root {
             --bg-dark: #13131a;
@@ -23,6 +28,24 @@
             box-sizing: border-box;
         }
         
+        /* Mobil Cihazlar İçin Responsive Tasarım */
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+                height: auto;
+                padding: 10px;
+            }
+            .sports-sidebar {
+                flex-direction: row !important;
+                width: 100% !important;
+                overflow-x: auto;
+                padding: 10px !important;
+            }
+            .sport-tab { white-space: nowrap; }
+            .match-list-container { width: 100% !important; max-height: 400px; }
+            .player-container { width: 100% !important; }
+        }
+
         /* 1. Sütun: Spor Sekmeleri */
         .sports-sidebar {
             width: 120px;
@@ -72,10 +95,7 @@
             padding-bottom: 10px;
             margin-bottom: 15px;
         }
-        .match-list-header h2 {
-            margin: 0;
-            font-size: 1.2em;
-        }
+        .match-list-header h2 { margin: 0; font-size: 1.2em; }
         
         /* Filtre */
         .filter-toggle {
@@ -91,13 +111,7 @@
             transition: 0.2s;
         }
         .filter-toggle:hover { background: rgba(255,255,255,0.1); color: white; }
-        .filter-toggle input {
-            accent-color: var(--accent);
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-            margin: 0;
-        }
+        .filter-toggle input { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; margin: 0; }
 
         .match-item {
             background: rgba(255,255,255,0.05);
@@ -127,22 +141,16 @@
             font-size: 0.85em;
             font-weight: bold;
         }
-        .team-info img {
-            width: 35px;
-            height: 35px;
-            object-fit: contain;
-            margin-bottom: 5px;
-        }
+        .team-info img { width: 35px; height: 35px; object-fit: contain; margin-bottom: 5px; }
         
         .match-center {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px; /* Elemanları biraz yakınlaştırdık */
+            gap: 4px; 
             width: 30%;
         }
 
-        /* YENİ: Bugün / Yarın Etiketi */
         .day-badge {
             font-size: 0.65em;
             color: var(--accent);
@@ -166,17 +174,8 @@
             color: var(--accent);
             animation: pulse 2s infinite;
         }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-        .vs-badge {
-            font-size: 0.65em;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .vs-badge { font-size: 0.65em; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 
         /* 3. Sütun: Oynatıcı */
         .player-container {
@@ -251,8 +250,7 @@
 
     <div class="player-container">
         <div class="video-wrapper">
-            <iframe id="video-player" src="" allowfullscreen allow="autoplay; encrypted-media"
-    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation">></iframe>
+            <iframe id="video-player" src="" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
         </div>
         <div class="stream-options" id="stream-options">
             <div style="color: var(--text-muted);">Yayın saatinde linkler buraya eklenecektir. Seçmek için listeden bir maça tıklayın.</div>
@@ -281,7 +279,6 @@
 
         async function initializeSystem() {
             try {
-                // YENİ: Tüm yaklaşan maçları çekiyoruz ki "Yarın"ki maçlar da listeye düşsün
                 const [sportsRes, matchesRes] = await Promise.all([
                     fetch(`${baseUrl}/sports`),
                     fetch(`${baseUrl}/matches/all`)
@@ -348,7 +345,6 @@
                 return;
             }
 
-            // Bugün ve Yarın tarihlerini hesaplamak için anlık tarihi alıyoruz
             const today = new Date();
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
@@ -366,19 +362,16 @@
                     }
                 }
 
-                // GÜN VE SAAT HESAPLAMALARI
                 const matchTime = new Date(match.date);
                 const timeStr = matchTime.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
                 const isLive = Date.now() >= match.date; 
 
-                // YENİ: "Bugün" ve "Yarın" Mantığı
                 let dayLabel = '';
                 if (matchTime.getDate() === today.getDate() && matchTime.getMonth() === today.getMonth()) {
                     dayLabel = 'BUGÜN';
                 } else if (matchTime.getDate() === tomorrow.getDate() && matchTime.getMonth() === tomorrow.getMonth()) {
                     dayLabel = 'YARIN';
                 } else {
-                    // Eğer maç 2 günden daha sonraysa direkt tarihi yazdır (Örn: 14 Eki)
                     dayLabel = matchTime.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }).toUpperCase();
                 }
 
@@ -410,7 +403,6 @@
                     if (isLive) {
                         loadStreams(match); 
                     } else {
-                        // Seçilen maçın "Bugün" mü "Yarın" mı olduğunu alttaki mesaja da ekledik
                         const displayDay = dayLabel === 'BUGÜN' || dayLabel === 'YARIN' ? dayLabel.toLowerCase() : dayLabel;
                         document.getElementById('stream-options').innerHTML = `<div style="color: var(--text-muted);">🕒 Bu maç <b>${displayDay} saat ${timeStr}</b>'da başlayacak. Yayın linkleri maç saatinde eklenecektir.</div>`;
                         document.getElementById('video-player').src = ""; 
@@ -466,6 +458,15 @@
         }
 
         initializeSystem();
+
+        // PWA SERVICE WORKER BAŞLATICISI
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker Başarılı:', reg))
+                    .catch(err => console.log('Service Worker Hatası:', err));
+            });
+        }
     </script>
 </body>
 </html>
