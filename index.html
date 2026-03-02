@@ -6,8 +6,9 @@
     <title>Canlı Maç Merkezi</title>
     
     <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#ff4757">
+    <meta name="theme-color" content="#13131a">
     <link rel="apple-touch-icon" href="./icon-192.png">
+
     <style>
         :root {
             --bg-dark: #13131a;
@@ -26,27 +27,10 @@
             gap: 20px;
             height: 100vh;
             box-sizing: border-box;
+            overflow: hidden; /* Masaüstünde sayfa değil, kutular kaysın */
         }
         
-        /* Mobil Cihazlar İçin Responsive Tasarım */
-        @media (max-width: 900px) {
-            body {
-                flex-direction: column;
-                height: auto;
-                padding: 10px;
-            }
-            .sports-sidebar {
-                flex-direction: row !important;
-                width: 100% !important;
-                overflow-x: auto;
-                padding: 10px !important;
-            }
-            .sport-tab { white-space: nowrap; }
-            .match-list-container { width: 100% !important; max-height: 400px; }
-            .player-container { width: 100% !important; }
-        }
-
-        /* 1. Sütun: Spor Sekmeleri */
+        /* 1. Sütun: Spor Sekmeleri (Masaüstü) */
         .sports-sidebar {
             width: 120px;
             background: var(--card-bg);
@@ -70,13 +54,9 @@
             color: var(--text-muted);
         }
         .sport-tab:hover { background: rgba(255,71,87,0.2); color: white; }
-        .sport-tab.active-tab {
-            background: var(--accent);
-            color: white;
-            box-shadow: 0 0 10px rgba(255,71,87,0.4);
-        }
+        .sport-tab.active-tab { background: var(--accent); color: white; box-shadow: 0 0 10px rgba(255,71,87,0.4); }
 
-        /* 2. Sütun: Maç Listesi */
+        /* 2. Sütun: Maç Listesi (Masaüstü) */
         .match-list-container {
             width: 380px;
             background: var(--card-bg);
@@ -126,63 +106,26 @@
             border-left: 4px solid transparent;
         }
         .match-item:hover { background: rgba(255,255,255,0.1); }
-        .match-item.active-match {
-            background: rgba(255,71,87,0.15);
-            border-left: 4px solid var(--accent);
-            transform: translateX(4px);
-        }
+        .match-item.active-match { background: rgba(255,71,87,0.15); border-left: 4px solid var(--accent); transform: translateX(4px); }
 
-        .team-info {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 35%;
-            text-align: center;
-            font-size: 0.85em;
-            font-weight: bold;
-        }
+        .team-info { display: flex; flex-direction: column; align-items: center; width: 35%; text-align: center; font-size: 0.85em; font-weight: bold; }
         .team-info img { width: 35px; height: 35px; object-fit: contain; margin-bottom: 5px; }
         
-        .match-center {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px; 
-            width: 30%;
-        }
+        .match-center { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 30%; }
 
-        .day-badge {
-            font-size: 0.65em;
-            color: var(--accent);
-            text-transform: uppercase;
-            font-weight: bold;
-            letter-spacing: 1px;
-            margin-bottom: -2px;
-        }
-
-        .time-badge {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.75em;
-            color: var(--text-muted);
-            font-weight: bold;
-            letter-spacing: 0.5px;
-        }
-        .time-badge.live {
-            background: rgba(255, 71, 87, 0.2);
-            color: var(--accent);
-            animation: pulse 2s infinite;
-        }
+        .day-badge { font-size: 0.65em; color: var(--accent); text-transform: uppercase; font-weight: bold; letter-spacing: 1px; margin-bottom: -2px; }
+        .time-badge { background: rgba(255, 255, 255, 0.1); padding: 4px 8px; border-radius: 4px; font-size: 0.75em; color: var(--text-muted); font-weight: bold; letter-spacing: 0.5px; }
+        .time-badge.live { background: rgba(255, 71, 87, 0.2); color: var(--accent); animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         .vs-badge { font-size: 0.65em; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 
-        /* 3. Sütun: Oynatıcı */
+        /* 3. Sütun: Oynatıcı (Masaüstü) */
         .player-container {
             flex: 1;
             display: flex;
             flex-direction: column;
             gap: 15px;
+            overflow-y: auto;
         }
         .video-wrapper {
             background: #000;
@@ -192,41 +135,74 @@
             padding-bottom: 56.25%;
             height: 0;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            flex-shrink: 0;
         }
-        .video-wrapper iframe {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            border: none;
-        }
-        .stream-options {
-            background: var(--card-bg);
-            padding: 15px;
-            border-radius: 12px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .stream-btn {
-            background: #2f3542;
-            color: white;
-            border: 1px solid #57606f;
-            padding: 10px 15px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+        .stream-options { background: var(--card-bg); padding: 15px; border-radius: 12px; display: flex; flex-wrap: wrap; gap: 10px; }
+        .stream-btn { background: #2f3542; color: white; border: 1px solid #57606f; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
         .stream-btn:hover { background: #57606f; }
         .stream-btn.active-stream { background: var(--accent); border-color: var(--accent); }
-        .hd-badge { background: #2ed573; color: #000; font-size: 0.7em; padding: 2px 5px; border-radius: 4px; }
 
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg-dark); }
         ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
+
+        /* =========================================
+           MOBİL (TELEFON VE KÜÇÜK TABLET) TASARIMI 
+           ========================================= */
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+                padding: 0;
+                height: 100vh;
+                overflow-y: auto; /* Sayfa bütünüyle kaydırılabilir olsun */
+            }
+
+            /* 1. OYNATICI (En Üstte ve Sabit Kalsın) */
+            .player-container {
+                width: 100% !important;
+                order: 1;
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                background: var(--bg-dark);
+                padding: 10px;
+                box-sizing: border-box;
+                gap: 10px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            }
+            .video-wrapper { border-radius: 8px; }
+            .stream-options { padding: 10px; border-radius: 8px; }
+
+            /* 2. SPOR SEKMELERİ (Yatay Kaydırmalı) */
+            .sports-sidebar {
+                flex-direction: row !important;
+                width: calc(100% - 20px) !important;
+                margin: 0 10px;
+                order: 2;
+                box-sizing: border-box;
+                padding: 10px !important;
+                min-height: auto;
+            }
+            .sport-tab {
+                flex-shrink: 0; /* Yazılar alta düşmesin, yan yana dursun */
+                padding: 8px 15px;
+            }
+
+            /* 3. MAÇ LİSTESİ (En Altta Serbest Kaydırma) */
+            .match-list-container {
+                width: calc(100% - 20px) !important;
+                margin: 0 10px 20px 10px;
+                order: 3;
+                box-sizing: border-box;
+                overflow: visible; /* Kendi scrollbar'ı yerine sayfa ile kaysın */
+            }
+
+            /* Ufak tasarım düzeltmeleri */
+            .team-info { font-size: 0.75em; }
+            .team-info img { width: 30px; height: 30px; }
+            .time-badge { font-size: 0.7em; }
+        }
     </style>
 </head>
 <body>
@@ -239,12 +215,10 @@
         <div class="match-list-header">
             <h2>📅 Maç Programı</h2>
         </div>
-        
         <label class="filter-toggle" style="margin-bottom: 15px;">
             <input type="checkbox" id="turkish-filter" onchange="renderMatches()">
             🇹🇷 Sadece Türk Takımları
         </label>
-
         <div id="match-list">Veriler çekiliyor...</div>
     </div>
 
@@ -253,7 +227,7 @@
             <iframe id="video-player" src="" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
         </div>
         <div class="stream-options" id="stream-options">
-            <div style="color: var(--text-muted);">Yayın saatinde linkler buraya eklenecektir. Seçmek için listeden bir maça tıklayın.</div>
+            <div style="color: var(--text-muted);">Yayın saatinde linkler buraya eklenecektir. Maç seçmek için aşağıya kaydırın.</div>
         </div>
     </div>
 
@@ -339,9 +313,7 @@
             });
 
             if (filteredMatches.length === 0) {
-                listDiv.innerHTML = `<p style="color:#a4b0be; text-align:center;">
-                    ${isTurkishFilterActive ? "Yaklaşan bir Türk maçı bulunamadı." : "Bu kategoride yaklaşan maç yok."}
-                </p>`;
+                listDiv.innerHTML = `<p style="color:#a4b0be; text-align:center;">${isTurkishFilterActive ? "Yaklaşan bir Türk maçı bulunamadı." : "Bu kategoride yaklaşan maç yok."}</p>`;
                 return;
             }
 
@@ -400,11 +372,14 @@
                     currentMatchId = match.id;
                     renderMatches(); 
                     
+                    // MOBİL İÇİN: Maça tıklandığında ekranı otomatik olarak en üste (videoya) kaydır
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+
                     if (isLive) {
                         loadStreams(match); 
                     } else {
                         const displayDay = dayLabel === 'BUGÜN' || dayLabel === 'YARIN' ? dayLabel.toLowerCase() : dayLabel;
-                        document.getElementById('stream-options').innerHTML = `<div style="color: var(--text-muted);">🕒 Bu maç <b>${displayDay} saat ${timeStr}</b>'da başlayacak. Yayın linkleri maç saatinde eklenecektir.</div>`;
+                        document.getElementById('stream-options').innerHTML = `<div style="color: var(--text-muted);">🕒 Bu maç <b>${displayDay} saat ${timeStr}</b>'da başlayacak.</div>`;
                         document.getElementById('video-player').src = ""; 
                     }
                 };
@@ -418,7 +393,7 @@
             optionsDiv.innerHTML = '🔄 Yayınlar aranıyor...';
 
             if (!match.sources || match.sources.length === 0) {
-                optionsDiv.innerHTML = '❌ Maç saati geldi ancak henüz yayın kaynağı eklenmedi. Lütfen sayfayı yenileyip tekrar deneyin.';
+                optionsDiv.innerHTML = '❌ Kaynak bulunamadı. Lütfen yenileyin.';
                 return;
             }
 
@@ -433,7 +408,7 @@
                 }
 
                 if (allStreams.length === 0) {
-                    optionsDiv.innerHTML = '❌ Aktif yayın sunucusu bulunamadı.';
+                    optionsDiv.innerHTML = '❌ Aktif yayın bulunamadı.';
                     return;
                 }
 
@@ -459,12 +434,11 @@
 
         initializeSystem();
 
-        // PWA SERVICE WORKER BAŞLATICISI
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker Başarılı:', reg))
-                    .catch(err => console.log('Service Worker Hatası:', err));
+                    .then(reg => console.log('SW Başarılı:', reg))
+                    .catch(err => console.log('SW Hatası:', err));
             });
         }
     </script>
