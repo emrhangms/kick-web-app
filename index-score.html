@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Canlı Maç Merkezi</title>
+
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚽</text></svg>">
+
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#13131a">
+    <link rel="apple-touch-icon" href="./icon-192.png">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="googlebot" content="noindex, nofollow">
+    <style>
+        :root {
+            --bg-dark: #13131a;
+            --card-bg: #1c1c24;
+            --accent: #ff4757;
+            --text-main: #f1f2f6;
+            --text-muted: #a4b0be;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: 15px;
+            /* Kenar boşluklarını biraz kıstık ki içerik rahatlasın */
+            display: flex;
+            gap: 15px;
+            height: 100vh;
+            box-sizing: border-box;
+            overflow: hidden;
+            /* Sayfanın tümü kaymasın */
+        }
+
+        /* =========================================
+           1. SÜTUN: SPOR SEKMELERİ
+           ========================================= */
+        .sports-sidebar {
+            flex: 0 0 130px;
+            /* Asla 100px'den büyük/küçük olma */
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 15px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+        }
+
+        .sport-tab {
+            padding: 10px 5px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: bold;
+            transition: 0.2s;
+            color: var(--text-muted);
+            word-wrap: break-word;
+            /* Uzun spor adları alta kaysın */
+        }
+
+        .sport-tab:hover {
+            background: rgba(255, 71, 87, 0.2);
+            color: white;
+        }
+
+        .sport-tab.active-tab {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 0 10px rgba(255, 71, 87, 0.4);
+        }
+
+        /* =========================================
+           2. SÜTUN: MAÇ LİSTESİ
+           ========================================= */
+        .match-list-container {
+            flex: 0 0 320px;
+            /* İdeal genişliği 320px, daha fazla esnemesin */
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 15px;
+            overflow-y: auto;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .match-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            flex-shrink: 0;
+        }
+
+        .match-list-header h2 {
+            margin: 0;
+            font-size: 1.1em;
+        }
+
+        .filter-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85em;
+            color: var(--text-muted);
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            flex-shrink: 0;
+        }
+
+        .filter-toggle input {
+            accent-color: var(--accent);
+            width: 14px;
+            height: 14px;
+            margin: 0;
+        }
+
+        .match-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-left: 4px solid transparent;
+        }
+
+        .match-item.active-match {
+            background: rgba(255, 71, 87, 0.15);
+            border-left: 4px solid var(--accent);
+        }
+
+        .team-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 33%;
+            text-align: center;
+            font-size: 0.75em;
+            font-weight: bold;
+            overflow: hidden;
+        }
+
+        .team-info span {
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        /* Uzun isimler taşmasın "..." olsun */
+        .team-info img {
+            width: 30px;
+            height: 30px;
+            object-fit: contain;
+            margin-bottom: 3px;
+        }
+
+        .match-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            width: 34%;
+        }
+
+        .day-badge {
+            font-size: 0.6em;
+            color: var(--accent);
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        .time-badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 0.7em;
+            color: var(--text-muted);
+            font-weight: bold;
+        }
+
+        .time-badge.live {
+            background: rgba(255, 71, 87, 0.2);
+            color: var(--accent);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* =========================================
+           3. SÜTUN: VİDEO OYNATICI
+           ========================================= */
+        .player-container {
+            flex: 1;
+            /* Kalan tüm boşluğu burası doldursun! Asla taşmasın. */
+            min-width: 0;
+            /* Flexbox taşmasını önleyen altın vuruş */
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+        }
+
+        .video-wrapper {
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            padding-bottom: 56.25%;
+            /* 16:9 Oranı */
+            height: 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            flex-shrink: 0;
+        }
+
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .stream-options {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .stream-btn {
+            background: #2f3542;
+            color: white;
+            border: 1px solid #57606f;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stream-btn.active-stream {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 4px;
+        }
+
+        /* =========================================
+           MOBİL (TELEFON VE KÜÇÜK TABLET) TASARIMI 
+           ========================================= */
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+                padding: 0;
+                height: 100vh;
+                overflow-y: auto;
+            }
+
+            .player-container {
+                width: 100% !important;
+                order: 1;
+                /* Mobil için fixed yerine normal sticky akışı iptal edildi/esnetildi maç sırasında video kalması için ama butonların görünmesi lazım */
+                background: var(--bg-dark);
+                padding: 10px;
+                box-sizing: border-box;
+                gap: 10px;
+                overflow: visible;
+            }
+
+            .sports-sidebar {
+                flex: none;
+                flex-direction: row !important;
+                width: calc(100% - 20px) !important;
+                margin: 0 10px;
+                order: 2;
+                box-sizing: border-box;
+                padding: 10px !important;
+                min-height: auto;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+            .sport-tab {
+                flex-shrink: 0;
+                padding: 8px 15px;
+                display: inline-block;
+            }
+
+            .match-list-container {
+                flex: none;
+                width: calc(100% - 20px) !important;
+                margin: 0 10px 20px 10px;
+                order: 3;
+                box-sizing: border-box;
+                overflow: visible;
+            }
+        }
+
+        /* =========================================
+           ESPN MATCH INFO TASARIMI
+           ========================================= */
+
+        .espn-match {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-left: 4px solid var(--accent);
+            margin-bottom: 10px;
+        }
+
+        .espn-team-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .espn-team {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.1em;
+            color: white;
+            width: 30%;
+        }
+
+        .espn-team img {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 8px;
+            object-fit: contain;
+        }
+
+        .espn-team-name {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: white;
+            text-align: center;
+        }
+
+        .espn-score-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            font-size: 2.5em;
+            font-weight: bold;
+            color: white;
+            width: 40%;
+        }
+
+        .espn-score-divider {
+            font-size: 0.6em;
+            color: #a4b0be;
+            font-weight: 300;
+        }
+
+        .espn-info-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+
+        .espn-status {
+            color: #d9534f;
+            background: #fdeaea;
+            font-size: 0.85em;
+            font-weight: bold;
+            padding: 4px 12px;
+            border-radius: 20px;
+            text-transform: uppercase;
+        }
+
+        .espn-diff-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        .espn-diff {
+            color: #2ed573;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .espn-box-score-btn {
+            background: #1e90ff;
+            color: white;
+            padding: 6px 15px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.8em;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .espn-box-score-btn:hover {
+            background: #0b7af0;
+        }
+
+        @media (max-width: 600px) {
+            .espn-team img {
+                width: 40px;
+                height: 40px;
+            }
+
+            .espn-score-container {
+                font-size: 2em;
+            }
+
+            .espn-diff-container {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+        }
+
+        /* Box Score Tablo Stilleri */
+        .boxscore-section {
+            background: var(--card-bg);
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            overflow: hidden;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-top: none;
+        }
+
+        .team-boxscore {
+            margin-bottom: 20px;
+            padding: 0 15px;
+        }
+
+        .team-boxscore h3 {
+            border-left: 4px solid var(--accent);
+            padding-left: 10px;
+            margin-bottom: 15px;
+            margin-top: 20px;
+            color: white;
+            font-size: 1.1em;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .boxscore-section table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            color: #dcdde1;
+        }
+
+        .boxscore-section th,
+        .boxscore-section td {
+            padding: 10px;
+            text-align: right;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            white-space: nowrap;
+        }
+
+        .boxscore-section th:first-child,
+        .boxscore-section td:first-child {
+            text-align: left;
+            font-weight: bold;
+            min-width: 150px;
+        }
+
+        .boxscore-section th {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: #a4b0be;
+            font-weight: 600;
+        }
+
+        .boxscore-section tr:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sports-sidebar" id="sports-tabs">
+        <div style="text-align:center; color: #a4b0be; font-size: 0.8em; margin-top: 10px;">...</div>
+    </div>
+
+    <div class="match-list-container">
+        <div class="match-list-header">
+            <h2>📅 Maç Programı</h2>
+        </div>
+        <label class="filter-toggle">
+            <input type="checkbox" id="turkish-filter" onchange="renderMatches()">
+            🇹🇷 Sadece Türk Takımları
+        </label>
+        <div id="match-list">Veriler çekiliyor...</div>
+    </div>
+
+    <div class="player-container">
+        <div class="video-wrapper">
+            <iframe id="video-player" src="" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+        </div>
+        <div class="stream-options" id="stream-options">
+            <div style="color: var(--text-muted); font-size: 0.9em;">Yayın saatinde linkler buraya eklenecektir. Maç
+                seçmek için listeden tıklayın.</div>
+        </div>
+        <div id="espn-match-info" style="display:none; margin-top: 10px;"></div>
+    </div>
+
+    <script>
+        const baseUrl = 'https://streamed.pk/api';
+        let allMatches = [];
+        let allSports = [];
+        let currentSportFilter = 'all';
+        let currentMatchId = null;
+
+        const turkishKeywords = [
+            "galatasaray", "fenerbah", "beşiktaş", "besiktas", "trabzon", "başakşehir", "basaksehir",
+            "adana demir", "sivas", "konya", "antalya", "kasımpaşa", "kasimpasa", "ankaragücü",
+            "ankaragucu", "alanya", "gaziantep", "hatay", "samsun", "rize", "pendik", "göztepe", "goztepe",
+            "efes", "telekom", "darüşşafaka", "darussafaka", "karşıyaka", "karsiyaka", "bursa", "banvit",
+            "türkiye", "turkey", "super lig", "süper lig"
+        ];
+
+        function isTurkishMatch(match) {
+            const textToSearch = (match.title + " " + (match.teams?.home?.name || "") + " " + (match.teams?.away?.name || "")).toLowerCase();
+            return turkishKeywords.some(keyword => textToSearch.includes(keyword));
+        }
+
+        async function initializeSystem() {
+            try {
+                const [sportsRes, matchesRes] = await Promise.all([
+                    fetch(`${baseUrl}/sports`),
+                    fetch(`${baseUrl}/matches/all`)
+                ]);
+
+                allSports = await sportsRes.json();
+                const rawMatches = await matchesRes.json();
+
+                const now = Date.now();
+                allMatches = rawMatches.filter(m => (m.date + 9000000) > now);
+
+                renderSportsTabs();
+                renderMatches();
+            } catch (error) {
+                document.getElementById('match-list').innerHTML = '❌ Sunucuya bağlanılamadı.';
+            }
+        }
+
+        function renderSportsTabs() {
+            const tabsDiv = document.getElementById('sports-tabs');
+            let html = `<div class="sport-tab active-tab" id="tab-all" onclick="filterSport('all')">TÜMÜ</div>`;
+            const activeSportIds = [...new Set(allMatches.map(m => m.category))];
+
+            activeSportIds.forEach(sportId => {
+                const sportObj = allSports.find(s => s.id === sportId) || { name: sportId.toUpperCase() };
+                html += `<div class="sport-tab" id="tab-${sportId}" onclick="filterSport('${sportId}')">${sportObj.name}</div>`;
+            });
+
+            tabsDiv.innerHTML = html;
+        }
+
+        function filterSport(sportId) {
+            currentSportFilter = sportId;
+            document.querySelectorAll('.sport-tab').forEach(t => t.classList.remove('active-tab'));
+            document.getElementById(`tab-${sportId}`).classList.add('active-tab');
+            renderMatches();
+        }
+
+        function renderMatches() {
+            const listDiv = document.getElementById('match-list');
+            listDiv.innerHTML = '';
+
+            let filteredMatches = currentSportFilter === 'all'
+                ? [...allMatches]
+                : allMatches.filter(m => m.category === currentSportFilter);
+
+            const isTurkishFilterActive = document.getElementById('turkish-filter').checked;
+            if (isTurkishFilterActive) {
+                filteredMatches = filteredMatches.filter(match => isTurkishMatch(match));
+            }
+
+            filteredMatches.sort((a, b) => {
+                const aHasLogo = a.teams?.home?.badge || a.teams?.away?.badge ? 1 : 0;
+                const bHasLogo = b.teams?.home?.badge || b.teams?.away?.badge ? 1 : 0;
+
+                if (bHasLogo !== aHasLogo) return bHasLogo - aHasLogo;
+                return a.date - b.date;
+            });
+
+            if (filteredMatches.length === 0) {
+                listDiv.innerHTML = `<p style="color:#a4b0be; text-align:center; font-size:0.9em;">${isTurkishFilterActive ? "Yaklaşan bir Türk maçı bulunamadı." : "Bu kategoride maç yok."}</p>`;
+                return;
+            }
+
+            const today = new Date();
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            filteredMatches.forEach(match => {
+                let homeName = 'Ev Sahibi', homeBadge = '', awayName = 'Dep.', awayBadge = '';
+                if (match.teams) {
+                    if (match.teams.home) {
+                        homeName = match.teams.home.name;
+                        homeBadge = match.teams.home.badge ? `${baseUrl}/images/badge/${match.teams.home.badge}.webp` : '';
+                    }
+                    if (match.teams.away) {
+                        awayName = match.teams.away.name;
+                        awayBadge = match.teams.away.badge ? `${baseUrl}/images/badge/${match.teams.away.badge}.webp` : '';
+                    }
+                }
+
+                const matchTime = new Date(match.date);
+                const timeStr = matchTime.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                const isLive = Date.now() >= match.date;
+
+                let dayLabel = '';
+                if (matchTime.getDate() === today.getDate() && matchTime.getMonth() === today.getMonth()) {
+                    dayLabel = 'BUGÜN';
+                } else if (matchTime.getDate() === tomorrow.getDate() && matchTime.getMonth() === tomorrow.getMonth()) {
+                    dayLabel = 'YARIN';
+                } else {
+                    dayLabel = matchTime.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }).toUpperCase();
+                }
+
+                const div = document.createElement('div');
+                div.className = `match-item ${match.id === currentMatchId ? 'active-match' : ''}`;
+
+                div.innerHTML = `
+                    <div class="team-info">
+                        ${homeBadge ? `<img src="${homeBadge}" onerror="this.style.display='none'">` : ''}
+                        <span>${homeName}</span>
+                    </div>
+                    
+                    <div class="match-center">
+                        <div class="day-badge">${dayLabel}</div>
+                        <div class="time-badge ${isLive ? 'live' : ''}">${isLive ? '🔴 CANLI' : `🕒 ${timeStr}`}</div>
+                    </div>
+
+                    <div class="team-info">
+                        ${awayBadge ? `<img src="${awayBadge}" onerror="this.style.display='none'">` : ''}
+                        <span>${awayName}</span>
+                    </div>
+                `;
+
+                div.onclick = () => {
+                    currentMatchId = match.id;
+                    renderMatches();
+
+                    if (window.innerWidth <= 900) {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+
+                    if (isLive) {
+                        loadStreams(match);
+                    } else {
+                        const displayDay = dayLabel === 'BUGÜN' || dayLabel === 'YARIN' ? dayLabel.toLowerCase() : dayLabel;
+                        document.getElementById('stream-options').innerHTML = `<div style="color: var(--text-muted); font-size: 0.9em;">🕒 Bu maç <b>${displayDay} saat ${timeStr}</b>'da başlayacak.</div>`;
+                        document.getElementById('video-player').src = "";
+                    }
+                };
+
+                listDiv.appendChild(div);
+            });
+        }
+
+        async function loadStreams(match) {
+            const optionsDiv = document.getElementById('stream-options');
+            optionsDiv.innerHTML = '<span style="font-size:0.9em;">🔄 Yayınlar aranıyor...</span>';
+
+            if (!match.sources || match.sources.length === 0) {
+                optionsDiv.innerHTML = '<span style="color:#ff4757; font-size:0.9em;">❌ Kaynak bulunamadı. Lütfen yenileyin.</span>';
+                return;
+            }
+
+            try {
+                let allStreams = [];
+                for (const source of match.sources) {
+                    const res = await fetch(`${baseUrl}/stream/${source.source}/${source.id}`);
+                    if (res.ok) {
+                        const streams = await res.json();
+                        allStreams = allStreams.concat(streams);
+                    }
+                }
+
+                if (allStreams.length === 0) {
+                    optionsDiv.innerHTML = '<span style="color:#ff4757; font-size:0.9em;">❌ Aktif yayın bulunamadı.</span>';
+                    return;
+                }
+
+                optionsDiv.innerHTML = '';
+                allStreams.forEach((stream, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = `stream-btn ${index === 0 ? 'active-stream' : ''}`;
+                    // "Yayın 1" yerine doğrudan dilini yazarak butonları daha kompakt yaptık
+                    btn.innerHTML = `${stream.language} ${stream.hd ? '<span style="background:#2ed573; color:#000; padding:2px 4px; border-radius:3px; font-size:0.7em;">HD</span>' : ''}`;
+                    btn.onclick = () => {
+                        document.getElementById('video-player').src = stream.embedUrl;
+                        document.querySelectorAll('.stream-btn').forEach(b => b.classList.remove('active-stream'));
+                        btn.classList.add('active-stream');
+                    };
+                    optionsDiv.appendChild(btn);
+                });
+
+                document.getElementById('video-player').src = allStreams[0].embedUrl;
+
+                showESPNForMatch(match);
+
+            } catch (error) {
+                optionsDiv.innerHTML = '<span style="color:#ff4757; font-size:0.9em;">❌ Yayınlar yüklenirken hata oluştu.</span>';
+            }
+        }
+
+        initializeSystem();
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW Başarılı:', reg))
+                    .catch(err => console.log('SW Hatası:', err));
+            });
+        }
+
+        // --- ESPN ENTEGRASYONU (Otomatik Eşleştirme) ---
+        const ESPNApiURLs = [
+            'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+            'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
+            'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard', // Hokey
+            // Futbol (Genişletilmiş)
+            'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard', // Premier Lig
+            'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.2/scoreboard', // Championship
+            'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard', // La Liga
+            'https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard', // Serie A
+            'https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/scoreboard', // Bundesliga
+            'https://site.api.espn.com/apis/site/v2/sports/soccer/fra.1/scoreboard', // Ligue 1
+            'https://site.api.espn.com/apis/site/v2/sports/soccer/tur.1/scoreboard', // Süper Lig
+            'https://site.api.espn.com/apis/site/v2/sports/soccer/ned.1/scoreboard', // Eredivisie
+            'https://site.api.espn.com/apis/site/v2/sports/soccer/por.1/scoreboard', // Primeira Liga
+            'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard', // MLS
+            'https://site.api.espn.com/apis/site/v2/sports/soccer/arg.1/scoreboard', // Arjantin
+            'https://site.api.espn.com/apis/site/v2/sports/soccer/bra.1/scoreboard', // Brezilya
+            'https://site.api.espn.com/apis/site/v2/sports/soccer/mex.1/scoreboard', // Liga MX
+            'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard', // UCL
+            'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.europa/scoreboard', // UEL
+            'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.conference/scoreboard', // UECL
+            'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard'
+        ];
+
+        let globalEspnEvents = [];
+
+        async function fetchESPNCache() {
+            try {
+                const promises = ESPNApiURLs.map(url => fetch(url).then(r => r.json()).then(data => ({ url, data })).catch(() => null));
+                const results = await Promise.all(promises);
+                let newEvents = [];
+                results.forEach(res => {
+                    if (res && res.data && res.data.events) {
+                        res.data.events.forEach(e => {
+                            e._apiUrl = res.url.replace('/scoreboard', '');
+                            newEvents.push(e);
+                        });
+                    }
+                });
+                globalEspnEvents = newEvents;
+            } catch (err) {
+                console.error("ESPN Cache Hatası:", err);
+            }
+        }
+
+        fetchESPNCache();
+        setInterval(fetchESPNCache, 60000);
+
+        function normalizeStr(str) {
+            if (!str) return "";
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/fc|sc|sk|club|united|city|real|athletic/g, '').replace(/[^a-z0-9]/g, "");
+        }
+
+        async function showESPNForMatch(matchObj) {
+            const infoDiv = document.getElementById('espn-match-info');
+            infoDiv.style.display = 'none';
+            infoDiv.innerHTML = '';
+
+            if (!matchObj || !matchObj.teams) return;
+
+            let hNameMatch = normalizeStr(matchObj.teams.home?.name);
+            let aNameMatch = normalizeStr(matchObj.teams.away?.name);
+
+            let foundEvent = null;
+            for (let event of globalEspnEvents) {
+                const hTeam = event.competitions[0].competitors.find(c => c.homeAway === 'home').team;
+                const aTeam = event.competitions[0].competitors.find(c => c.homeAway === 'away').team;
+
+                const hESPN = normalizeStr(hTeam.name + hTeam.shortDisplayName + hTeam.abbreviation);
+                const aESPN = normalizeStr(aTeam.name + aTeam.shortDisplayName + aTeam.abbreviation);
+
+                if ((hESPN.includes(hNameMatch) || hNameMatch.includes(normalizeStr(hTeam.shortDisplayName))) &&
+                    (aESPN.includes(aNameMatch) || aNameMatch.includes(normalizeStr(aTeam.shortDisplayName)))) {
+                    foundEvent = event;
+                    break;
+                }
+            }
+
+            if (foundEvent) {
+                const hTeam = foundEvent.competitions[0].competitors.find(c => c.homeAway === 'home');
+                const aTeam = foundEvent.competitions[0].competitors.find(c => c.homeAway === 'away');
+
+                let hScore = parseInt(hTeam.score) || 0;
+                let aScore = parseInt(aTeam.score) || 0;
+
+                let diffText = "Durum Eşit";
+                if (hScore > aScore) {
+                    diffText = `🔥 ${hTeam.team.abbreviation || hTeam.team.shortDisplayName} ${hScore - aScore} Farkla Önde`;
+                } else if (aScore > hScore) {
+                    diffText = `🔥 ${aTeam.team.abbreviation || aTeam.team.shortDisplayName} ${aScore - hScore} Farkla Önde`;
+                }
+
+                const matchState = foundEvent.status.type.state;
+                if (matchState === 'pre') diffText = '⏱ Maç Başlamadı';
+                if (matchState === 'post') diffText = diffText.replace('Önde', 'Kazandı');
+
+                let boxScoreLink = foundEvent.links?.find(l => l.rel.includes("boxscore"))?.href || '#';
+
+                infoDiv.style.display = 'block';
+                infoDiv.innerHTML = `
+                    <div class="espn-match" style="margin-bottom:0; border-bottom-left-radius:0; border-bottom-right-radius:0; border: 1px solid rgba(255, 255, 255, 0.05); border-bottom: none;">
+                        <div class="espn-team-container">
+                            <div class="espn-team">
+                                <img src="${hTeam.team.logo || ''}" onerror="this.style.display='none'">
+                                <div class="espn-team-name">${hTeam.team.abbreviation || hTeam.team.shortDisplayName}</div>
+                            </div>
+                            
+                            <div class="espn-score-container">
+                                <div>${hTeam.score || '0'}</div>
+                                <div class="espn-score-divider">-</div>
+                                <div>${aTeam.score || '0'}</div>
+                            </div>
+
+                            <div class="espn-team">
+                                <img src="${aTeam.team.logo || ''}" onerror="this.style.display='none'">
+                                <div class="espn-team-name">${aTeam.team.abbreviation || aTeam.team.shortDisplayName}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="espn-info-container">
+                            <div class="espn-status">${foundEvent.status.type.detail}</div>
+                            <div class="espn-diff-container">
+                                <div class="espn-diff">${diffText}</div>
+                                ${boxScoreLink !== '#' ? `<a href="${boxScoreLink}" target="_blank" class="espn-box-score-btn">📋 Box Score (ESPN)</a>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                if (foundEvent._apiUrl) {
+                    try {
+                        const loadingDiv = document.createElement('div');
+                        loadingDiv.id = 'boxscore-loading';
+                        loadingDiv.innerHTML = '<div style="text-align:center; padding: 15px; color: #a4b0be; background: rgba(255,255,255,0.02); border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; font-size: 0.9em; border: 1px solid rgba(255, 255, 255, 0.05); border-top: none;">📊 Oyuncu istatistikleri yükleniyor...</div>';
+                        infoDiv.appendChild(loadingDiv);
+
+                        const summaryRes = await fetch(`${foundEvent._apiUrl}/summary?event=${foundEvent.id}`);
+                        const summaryData = await summaryRes.json();
+
+                        document.getElementById('boxscore-loading')?.remove();
+
+                        if (summaryData.boxscore && summaryData.boxscore.players) {
+                            const boxscorePlayers = summaryData.boxscore.players;
+
+                            let boxscoreHTML = '<div class="boxscore-section">';
+
+                            boxscorePlayers.forEach(teamData => {
+                                if (!teamData || !teamData.statistics || teamData.statistics.length === 0) return;
+
+                                const stats = teamData.statistics[0];
+                                const labels = stats.labels;
+                                const athletes = stats.athletes;
+
+                                boxscoreHTML += `
+                                <div class="team-boxscore">
+                                    <h3>${teamData.team.displayName} Box Score</h3>
+                                    <div class="table-wrapper">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>Oyuncu</th>
+                                                    ${labels.map(label => `<th>${label}</th>`).join('')}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                `;
+
+                                athletes.forEach(athleteObj => {
+                                    const isStarter = athleteObj.starter ? '*' : '';
+                                    const playerStats = athleteObj.stats;
+
+                                    if (!playerStats || playerStats.length === 0) {
+                                        boxscoreHTML += `
+                                            <tr>
+                                                <td>${athleteObj.athlete.displayName} ${isStarter}</td>
+                                                <td colspan="${labels.length}" style="text-align: center; color: #747d8c;">Oynamadı / Veri Yok</td>
+                                            </tr>
+                                        `;
+                                    } else {
+                                        boxscoreHTML += `
+                                            <tr>
+                                                <td>${athleteObj.athlete.displayName} ${isStarter}</td>
+                                                ${playerStats.map(stat => `<td>${stat}</td>`).join('')}
+                                            </tr>
+                                        `;
+                                    }
+                                });
+
+                                boxscoreHTML += `
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>`;
+                            });
+
+                            boxscoreHTML += `
+                                <div style="margin-top: 15px; margin-bottom: 20px; font-size: 11px; color: #747d8c; text-align: center;">
+                                    * İlk 5 başlayan oyuncuları gösterir.<br>
+                                    Veriler ESPN üzerinden anlık çekilmektedir.
+                                </div>
+                            </div>`;
+
+                            const bsContainer = document.createElement('div');
+                            bsContainer.innerHTML = boxscoreHTML;
+                            infoDiv.appendChild(bsContainer);
+                        } else {
+                            // Box score bulunamadıysa (örneğin bazı futbol basketbol dışı maçlarda) tabanını kavisli yapmak için ekstra boşluk
+                            const noData = document.createElement('div');
+                            noData.style = "background: rgba(255,255,255,0.02); height: 10px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05); border-top: none;";
+                            infoDiv.appendChild(noData);
+                        }
+                    } catch (err) {
+                        console.error("Boxscore detayları çekilemedi:", err);
+                        document.getElementById('boxscore-loading')?.remove();
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
